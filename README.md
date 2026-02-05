@@ -26,40 +26,43 @@ A simplified Python trading bot for Binance Futures Testnet (USDT-M), supporting
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Configure environment variables**:
-    Create a `.env` file in the `trading_bot/` directory (see `.env.example`):
+## Configuration
+1.  **Environment Setup**: Create a `.env` file from the [template](.env.example):
     ```env
-    BINANCE_TESTNET_API_KEY=your_api_key_here
-    BINANCE_TESTNET_API_SECRET=your_api_secret_here
+    BINANCE_ENV=testnet # or production
+    
+    # Testnet
+    BINANCE_TESTNET_API_KEY=...
+    BINANCE_TESTNET_API_SECRET=...
+    
+    # Production
+    BINANCE_API_KEY=...
+    BINANCE_API_SECRET=...
     ```
 
 ## Usage
 
-### 1. Interactive Mode
-Simply run the script without arguments:
+### 1. Local Python Execution
 ```bash
 python cli.py
 ```
 
-### 2. Market Order Example
+### 2. Docker Execution (Recommended for Deployment)
+Build the image:
 ```bash
-python cli.py --symbol BTCUSDT --side BUY --type MARKET --qty 0.01
+docker build -t binance-bot .
 ```
-
-### 3. Limit Order Example
+Run interactively:
 ```bash
-python cli.py --symbol BTCUSDT --side SELL --type LIMIT --qty 0.01 --price 100000
-```
-
-### 4. Trailing Stop Market Example (Bonus)
-```bash
-python cli.py --symbol BTCUSDT --side BUY --type TRAILING_STOP_MARKET --qty 0.01 --callback_rate 1.0
+docker run -it --env-file .env binance-bot
 ```
 
 ## Logs
-Logs are stored in the `logs/` directory:
-- `market_order.log`: Contains records of Market and Trailing Stop Market requests/responses.
-- `limit_order.log`: Contains records of Limit order requests/responses.
+Logs are stored in the `logs/` directory. For Docker:
+```bash
+docker run -it --env-file .env -v ${PWD}/logs:/app/logs binance-bot
+```
+
 
 ## Assumptions & Design
 - **API Version**: Uses Binance Futures API v1 (`/fapi/v1`).
