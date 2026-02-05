@@ -5,47 +5,53 @@ class OrderManager:
     def __init__(self):
         self.wrapper = BinanceClientWrapper()
 
-    def place_market_order(self, symbol, side, quantity):
-        logger = get_logger('MARKET')
-        logger.info(f"Attempting MARKET order: Symbol={symbol}, Side={side}, Qty={quantity}")
+    def _place_order(self, params, order_type_name):
+        logger = get_logger(order_type_name)
+        logger.info(f"Attempting {order_type_name} order: {params}")
         
         try:
-            params = {
-                'symbol': symbol,
-                'side': side,
-                'type': 'MARKET',
-                'quantity': quantity,
-            }
-            
-            # Use direct endpoint for Futures Order
             response = self.wrapper.send_request('POST', '/fapi/v1/order', params)
-            
-            logger.info(f"MARKET order success: {response}")
+            logger.info(f"{order_type_name} order success: {response}")
             return response
-            
         except Exception as e:
-            logger.error(f"Error (MARKET): {e}")
+            logger.error(f"Error ({order_type_name}): {e}")
             raise e
 
+    def place_market_order(self, symbol, side, quantity):
+        params = {
+            'symbol': symbol,
+            'side': side,
+            'type': 'MARKET',
+            'quantity': quantity,
+        }
+        return self._place_order(params, 'MARKET')
+
     def place_limit_order(self, symbol, side, quantity, price):
-        logger = get_logger('LIMIT')
-        logger.info(f"Attempting LIMIT order: Symbol={symbol}, Side={side}, Qty={quantity}, Price={price}")
-        
-        try:
-            params = {
-                'symbol': symbol,
-                'side': side,
-                'type': 'LIMIT',
-                'timeInForce': 'GTC',
-                'quantity': quantity,
-                'price': price
-            }
-            
-            response = self.wrapper.send_request('POST', '/fapi/v1/order', params)
-            
-            logger.info(f"LIMIT order success: {response}")
-            return response
-            
-        except Exception as e:
-            logger.error(f"Error (LIMIT): {e}")
-            raise e
+        params = {
+            'symbol': symbol,
+            'side': side,
+            'type': 'LIMIT',
+            'timeInForce': 'GTC',
+            'quantity': quantity,
+            'price': price
+        }
+        return self._place_order(params, 'LIMIT')
+
+    def place_trailing_stop_market_order(self, symbol, side, quantity, callback_rate):
+        """
+        Bonus: Add a third order type: Trailing Stop Market
+        """
+        params = {
+            'symbol': symbol,
+            'side': side,
+            'type': 'TRAILING_STOP_MARKET',
+            'quantity': quantity,
+            'callbackRate': callback_rate, # e.g. 1.0 for 1%
+            'workingType': 'MARK_PRICE'
+        }
+        return self._place_order(params, 'TRAILING_STOP_MARKET')
+
+
+
+
+

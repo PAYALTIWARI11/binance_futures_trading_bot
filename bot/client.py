@@ -63,18 +63,14 @@ class BinanceClientWrapper:
         if params is None:
             params = {}
             
-        # Add timestamp
+        # Add mandatory timestamp and optional recvWindow
         params['timestamp'] = int(time.time() * 1000)
+        if 'recvWindow' not in params:
+            params['recvWindow'] = 5000
         
-        # Prepare payload for signing
-        # Sort params by key to be deterministic
-        sorted_params = sorted(params.items(), key=lambda item: item[0])
-        query_string = urlencode(sorted_params)
-        
-        # Sign
+        # Prepare and sign the query string
+        query_string = urlencode(sorted(params.items()))
         signature = self._get_signature(query_string)
-        
-        # Append signature to query_string
         full_query_string = f"{query_string}&signature={signature}"
 
         headers = {
@@ -82,26 +78,34 @@ class BinanceClientWrapper:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        url = f"{BASE_URL}{endpoint}?{full_query_string}"
-        
-        print(f"DEBUG: Sending {method} to {url[:60]}...")
-        print(f"DEBUG: API Key Len: {len(self.api_key)}")
+        url = f"{BASE_URL}{endpoint}"
         
         try:
             if method.upper() == 'GET':
-                response = requests.get(url, headers=headers)
+                response = requests.get(f"{url}?{full_query_string}", headers=headers)
             elif method.upper() == 'POST':
-                # Send parameters in the URL (query string) for consistency
-                response = requests.post(url, headers=headers) 
+                # Binance requires parameters for signed POST requests to be in the query string 
+                # OR in the body. Putting them in query string is usually more reliable across endpoints.
+                response = requests.post(f"{url}?{full_query_string}", headers=headers)
+            elif method.upper() == 'DELETE':
+                response = requests.delete(f"{url}?{full_query_string}", headers=headers)
             else:
                 raise ValueError(f"Unsupported method: {method}")
                 
-            # Handle Errors logic...
+            # Log the full request and response for transparency (as per requirements)
+            logging.debug(f"API Request: {method} {url} Params: {params}")
+            logging.debug(f"API Response: {response.status_code} {response.text}")
+
             if response.status_code >= 400:
-                print(f"DEBUG: Response: {response.text}")
-                raise Exception(f"Binance API Error ({response.status_code}): {response.text}")
+                error_data = response.json() if response.text else {}
+                error_msg = error_data.get('msg', 'Unknown Error')
+                error_code = error_data.get('code', 'N/A')
+                raise Exception(f"Binance API Error {error_code}: {error_msg}")
                 
             return response.json()
             
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Network error occurred: {e}")
         except Exception as e:
             raise Exception(f"Request failed: {e}")
+

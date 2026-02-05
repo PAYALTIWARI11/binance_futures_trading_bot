@@ -21,16 +21,22 @@ def validate_side(side):
 
 def validate_order_type(order_type):
     """
-    Validates order type: MARKET or LIMIT.
+    Validates order type: MARKET, LIMIT, or TRAILING_STOP_MARKET.
     """
-    if order_type not in ['MARKET', 'LIMIT']:
-        raise ValueError(f"Invalid order_type '{order_type}'. Must be 'MARKET' or 'LIMIT'.")
+    allowed = ['MARKET', 'LIMIT', 'TRAILING_STOP_MARKET']
+    if order_type not in allowed:
+        raise ValueError(f"Invalid order_type '{order_type}'. Must be one of {allowed}.")
     return order_type
+
+
+
 
 def validate_quantity(qty):
     """
     Validates quantity: Must be a positive float.
     """
+    if qty is None:
+        raise ValueError("Quantity is required.")
     try:
         qty = float(qty)
     except ValueError:
@@ -55,3 +61,21 @@ def validate_price(price, order_type):
         if price <= 0:
             raise ValueError(f"Price must be greater than 0. Got: {price}")
     return price
+
+def validate_callback_rate(rate, order_type):
+    """
+    Validates callback rate: Required and 0.1 to 5.0 for TRAILING_STOP_MARKET.
+    """
+    if order_type == 'TRAILING_STOP_MARKET':
+        if rate is None:
+            raise ValueError("Callback Rate is required for TRAILING_STOP_MARKET.")
+        try:
+            rate = float(rate)
+        except ValueError:
+            raise ValueError(f"Callback Rate '{rate}' is not a valid number.")
+        
+        if not (0.1 <= rate <= 5.0):
+            raise ValueError(f"Callback Rate must be between 0.1 and 5.0. Got: {rate}")
+    return rate
+
+
