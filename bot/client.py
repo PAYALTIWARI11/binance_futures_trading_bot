@@ -12,15 +12,26 @@ from cryptography.hazmat.backends import default_backend
 # Load environment variables
 load_dotenv()
 
-BASE_URL = "https://testnet.binancefuture.com"
+# Environment configuration
+BINANCE_ENV = os.getenv('BINANCE_ENV', 'testnet').lower()
+
+if BINANCE_ENV == 'production':
+    BASE_URL = "https://fapi.binance.com"
+    API_KEY_VAR = 'BINANCE_API_KEY'
+    API_SECRET_VAR = 'BINANCE_API_SECRET'
+else:
+    BASE_URL = "https://testnet.binancefuture.com"
+    API_KEY_VAR = 'BINANCE_TESTNET_API_KEY'
+    API_SECRET_VAR = 'BINANCE_TESTNET_API_SECRET'
 
 class BinanceClientWrapper:
     def __init__(self):
-        self.api_key = os.getenv('BINANCE_TESTNET_API_KEY')
-        self.api_secret = os.getenv('BINANCE_TESTNET_API_SECRET')
+        self.api_key = os.getenv(API_KEY_VAR)
+        self.api_secret = os.getenv(API_SECRET_VAR)
         
         if not self.api_key or not self.api_secret:
-            raise ValueError("API credentials missing. Please set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET.")
+            raise ValueError(f"API credentials missing. Please set {API_KEY_VAR} and {API_SECRET_VAR} for {BINANCE_ENV} environment.")
+
 
         # Strip whitespace just in case
         self.api_key = self.api_key.strip()
